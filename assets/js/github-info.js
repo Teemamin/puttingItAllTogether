@@ -15,6 +15,29 @@ function userInformationHTML(user) {
         </div>`;
 }
 
+function repoInformationHTML(repos) {
+    if (repos.length == 0) {// GitHub actually returns this object as an array.so we can use the length property to see if our arry is empty then return d below message
+        return `<div class="clearfix repo-list">No repo</div>`;
+    }
+    var listItemsHTML = repos.map(function (repo) { //If, however, data has been returned, then since it's an array, we want to iterate through it and get that information out.
+        return `<li>
+                    <a href="${repo.html_url}" target="_blank">${repo.name}</a>
+                </li>`;
+    });
+//the use of \n in line 33 is to stop us from having to iterate through the new array again
+    return `<div class="clearfix repo-list">
+                <p>
+                    <strong>Repo List:</strong>
+                </p>
+                <ul>
+                    ${listItemsHTML.join("\n")} 
+                </ul>
+            </div>`;
+
+}
+
+
+
 function fetchGitHubInformation(event) {
 
     var username = $("#gh-username").val();
@@ -29,13 +52,18 @@ function fetchGitHubInformation(event) {
         </div>`);
 
     $.when(
-        $.getJSON(`https://api.github.com/users/${username}`)
+        $.getJSON(`https://api.github.com/users/${username}`),
+        $.getJSON(`https://api.github.com/users/${username}/repos`)
+
     ).then(
-        function(response) {
-            var userData = response;
+        function (firstResponse, secondResponse) { // when we do two calls like this, the when() method packs a response up into arrays.
+            //And each one is the first element of the array.
+            var userData = firstResponse[0];
+            var repoData = secondResponse[0];
             $("#gh-user-data").html(userInformationHTML(userData));
+            $("#gh-repo-data").html(repoInformationHTML(repoData));
         },
-        function(errorResponse) {
+        function (errorResponse) {
             if (errorResponse.status === 404) {
                 $("#gh-user-data").html(
                     `<h2>No info found for user ${username}</h2>`);
